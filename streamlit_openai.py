@@ -73,7 +73,7 @@ if prompt := st.chat_input():
             break
         else:
             with st.spinner("자료를 검토중입니다"):
-                time.sleep(1)
+                time.sleep(0.5)
             st.rerun()  # 이전에 출력된 내용이 반복해서 나타나는 문제를 방지
     st.write(run)
 
