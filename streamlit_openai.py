@@ -78,7 +78,7 @@ if prompt := st.chat_input():
         st.rerun()
 
     if st.session_state.run_status == "completed":
-        st.write(run)
+        print(run)
 
     thread_messages = client.beta.threads.messages.list(thread_id)
     print(thread_messages.data)
