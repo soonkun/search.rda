@@ -1,6 +1,5 @@
 from openai import OpenAI
 import streamlit as st
-import pandas as pd
 import time
 import os
 
@@ -10,11 +9,10 @@ openai_api_key = os.getenv('OPENAI_API_KEY')
 # 스레드 ID를 저장하고 관리하기 위한 session_state 초기화
 if "thread_id" not in st.session_state:
     st.session_state.thread_id = ""
-    
-with st.sidebar:
-        
-    #thread_id = st.text_input("Thread ID")
+if "run_status" not in st.session_state:
+    st.session_state.run_status = "not_started"
 
+with st.sidebar:
     thread_btn = st.button("스레드를 만들어 대화를 시작합니다.")
     
     client = OpenAI(api_key=openai_api_key)
@@ -30,8 +28,10 @@ with st.sidebar:
 st.title("💬 농촌진흥청 새싹이 입니다.🌱")
 st.caption("챗봇을 통해 농촌진흥청 담당자를 찾아보세요.🔍")
 if "messages" not in st.session_state:
-    st.session_state["messages"] = [{"role": "assistant", "content": "안녕하세요! 무엇이 궁금하신가요?"},
-    {"role": "assistant", "content": "왼쪽 위에 ' > '를 눌러 스레드를 생성하고 문의사항을 입력해주세요."}]
+    st.session_state["messages"] = [
+        {"role": "assistant", "content": "안녕하세요! 무엇이 궁금하신가요?"},
+        {"role": "assistant", "content": "왼쪽 위에 ' > '를 눌러 스레드를 생성하고 문의사항을 입력해주세요."}
+    ]
 
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg["content"])
@@ -53,13 +53,13 @@ if prompt := st.chat_input():
         thread_id,
         role="user",
         content=prompt,
-        )
+    )
     print(response)
 
     run = client.beta.threads.runs.create(
         thread_id=thread_id,
         assistant_id=assistant_id
-        )
+    )
     print(run)
 
     run_id = run.id
@@ -68,14 +68,17 @@ if prompt := st.chat_input():
         run = client.beta.threads.runs.retrieve(
             thread_id=thread_id,
             run_id=run_id
-            )
+        )
         if run.status == "completed":
+            st.session_state.run_status = "completed"
             break
         else:
             with st.spinner("자료를 검토중입니다"):
                 time.sleep(0.5)
-            st.rerun()  # 이전에 출력된 내용이 반복해서 나타나는 문제를 방지
-    st.write(run)
+        st.rerun()
+
+    if st.session_state.run_status == "completed":
+        st.write(run)
 
     thread_messages = client.beta.threads.messages.list(thread_id)
     print(thread_messages.data)
